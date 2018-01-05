@@ -3,6 +3,9 @@ def compute_similarity_transform(X, Y, compute_optimal_scale=False):
   """
   A port of MATLAB's `procrustes` function to Numpy.
   Adapted from http://stackoverflow.com/a/18927641/1884420
+  Procrustes analysis aims to align 2 sets of points (in other words, 2 shapes)
+  to minimize square distance between them by removing scale,
+  translation and rotation warp components.
 
   Args
     X: array NxM of targets, with N number of points and M point dimensionality

@@ -57,11 +57,13 @@ tf.app.flags.DEFINE_boolean("use_cpu", False, "Whether to use the CPU")
 tf.app.flags.DEFINE_integer("load", 0, "Try to load a previous checkpoint.")
 
 # Misc
+#Float Precision
 tf.app.flags.DEFINE_boolean("use_fp16", False, "Train using fp16 instead of fp32.")
 
 FLAGS = tf.app.flags.FLAGS
+FLAGS(sys.argv)
 
-train_dir = os.path.join( FLAGS.train_dir,
+train_dir = os.path.join(FLAGS.train_dir,
   FLAGS.action,
   'dropout_{0}'.format(FLAGS.dropout),
   'epochs_{0}'.format(FLAGS.epochs) if FLAGS.epochs > 0 else '',
@@ -76,7 +78,7 @@ train_dir = os.path.join( FLAGS.train_dir,
   'use_stacked_hourglass' if FLAGS.use_sh else 'not_stacked_hourglass',
   'predict_14' if FLAGS.predict_14 else 'predict_17')
 
-print( train_dir )
+print("train_dir is : ", train_dir )
 summaries_dir = os.path.join( train_dir, "log" ) # Directory for TB summaries
 
 # To avoid race conditions: https://github.com/tensorflow/tensorflow/issues/7448
