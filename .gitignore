@@ -1,6 +1,6 @@
 data/
 experiments/
-experiments1/
+experiments_biframe/
 *~
 *.pyc
 *.h5

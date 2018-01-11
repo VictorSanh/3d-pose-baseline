@@ -490,3 +490,47 @@ def postprocess_3d( poses_set ):
     poses_set[k] = poses
 
   return poses_set, root_positions
+
+
+def uni_frame_to_bi_frame(data):
+    data_out = {}
+
+    for k in data.keys():
+        nb_frames, dim_one_frame = data[k].shape
+        bi_frame = np.zeros((nb_frames-1, 2*dim_one_frame))
+
+        for i in range(nb_frames - 1):
+            bi_frame[i, :] = data[k][i:i+2, :].reshape(1, 2*dim_one_frame)
+
+        data_out[k] = bi_frame
+
+    return data_out
+
+
+def transform_to_2d_biframe_prediction(train_set_2d,
+                                       test_set_2d,
+                                       data_mean_2d,
+                                       data_std_2d,
+                                       dim_to_ignore_2d,
+                                       dim_to_use_2d):
+
+    train_set_2d = uni_frame_to_bi_frame(train_set_2d)
+    test_set_2d = uni_frame_to_bi_frame(test_set_2d)
+
+    data_mean_2d = np.concatenate((data_mean_2d, data_mean_2d))
+    data_std_2d = np.concatenate((data_std_2d, data_std_2d))
+
+    offset = max(np.max(dim_to_use_2d), np.max(dim_to_ignore_2d))
+    dim_to_use_2d = np.concatenate((dim_to_use_2d, offset + dim_to_use_2d))
+    dim_to_ignore_2d = np.concatenate((dim_to_ignore_2d, offset + dim_to_ignore_2d))
+
+    return train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d
+
+
+def remove_first_frame(data):
+    data_out = {}
+
+    for k in data.keys():
+        data_out[k] = data[k][1:, :]
+
+    return data_out
