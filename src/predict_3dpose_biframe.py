@@ -194,6 +194,7 @@ def train():
 
     for _ in xrange( FLAGS.epochs ):
       current_epoch = current_epoch + 1
+      epoch_time = time.time()
 
       # === Load training batches for one epoch ===
       encoder_inputs, decoder_outputs = model.get_all_batches( train_set_2d, train_set_3d, FLAGS.camera_frame, training=True )
@@ -230,6 +231,7 @@ def train():
             "Train loss avg:      %.4f\n"
             "=============================" % (model.global_step.eval(),
             model.learning_rate.eval(), loss) )
+      print('Epoch number {0} completed in {1:.2f} ms'.format(current_epoch, (time.time() - epoch_time)))
       # === End training for an epoch ===
 
       # === Testing after this epoch ===
@@ -290,7 +292,7 @@ def train():
       print( "Saving the model... ", end="" )
       start_time = time.time()
       model.saver.save(sess, os.path.join(train_dir, 'checkpoint'), global_step=current_step )
-      print( "done in {0:.2f} ms".format(1000*(time.time() - start_time)) )
+      print( "Saving done in {0:.2f} ms".format(1000*(time.time() - start_time)) )
 
       # Reset global time and loss
       step_time, loss = 0, 0
