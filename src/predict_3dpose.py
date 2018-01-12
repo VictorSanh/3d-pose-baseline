@@ -402,6 +402,7 @@ def evaluate_batches( sess, model,
 def sample():
   """Get samples from a model and visualize them"""
 
+  print('Begin Sample')
   actions = data_utils.define_actions( FLAGS.action )
 
   # Load camera parameters
@@ -422,9 +423,33 @@ def sample():
   with tf.Session(config=tf.ConfigProto( device_count = device_count )) as sess:
     # === Create the model ===
     print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.linear_size))
-    batch_size = 128
+    batch_size = 64 #Intial code is 64*2
     model = create_model(sess, actions, batch_size)
     print("Model loaded")
+
+    #####Evaluate test error action wise
+    print("{0:=^12} {1:=^6}".format("Action", "mm")) # line of 30 equal signs
+
+    cum_err = 0
+    for action in actions:
+
+      print("{0:<12} ".format(action), end="")
+      # Get 2d and 3d testing data for this action
+      action_test_set_2d = get_action_subset( test_set_2d, action )
+      action_test_set_3d = get_action_subset( test_set_3d, action )
+      encoder_inputs, decoder_outputs = model.get_all_batches( action_test_set_2d, action_test_set_3d, FLAGS.camera_frame, training=False)
+
+      act_err, _, step_time, loss = evaluate_batches( sess, model,
+        data_mean_3d, data_std_3d, dim_to_use_3d, dim_to_ignore_3d,
+        data_mean_2d, data_std_2d, dim_to_use_2d, dim_to_ignore_2d,
+        1, encoder_inputs, decoder_outputs ) #We don't care of the value 1. It is a false argument.
+      cum_err = cum_err + act_err
+
+      print("{0:>6.2f}".format(act_err))
+
+    print("{0:<12} {1:>6.2f}".format("Average", cum_err/float(len(actions) )))
+    print("{0:=^19}".format(''))
+    ############################
 
     for key2d in test_set_2d.keys():
 

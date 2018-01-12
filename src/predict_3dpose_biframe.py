@@ -119,7 +119,7 @@ def create_model( session, actions, batch_size ):
 
   # Load a previously saved model
   ckpt = tf.train.get_checkpoint_state( train_dir, latest_filename="checkpoint")
-  print( "train_dir", train_dir )
+  print( "train_dir is : ", train_dir )
 
   if ckpt and ckpt.model_checkpoint_path:
     # Check if the specific checkpoint exists
@@ -156,6 +156,8 @@ def train():
     actions, FLAGS.data_dir, FLAGS.camera_frame, rcams, FLAGS.predict_14 )
   train_set_3d = data_utils.remove_first_frame(train_set_3d)
   test_set_3d = data_utils.remove_first_frame(test_set_3d)
+  train_root_positions = data_utils.remove_first_frame(train_root_positions)
+  test_root_positions = data_utils.remove_first_frame(test_root_positions)
 
 
   # Read stacked hourglass 2D predictions if use_sh, otherwise use groundtruth 2D projections
@@ -169,6 +171,12 @@ def train():
                                                                                                                                            dim_to_use_2d)
   else:
     train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.create_2d_data( actions, FLAGS.data_dir, rcams )
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.transform_to_2d_biframe_prediction(train_set_2d,
+                                                                                                                                           test_set_2d,
+                                                                                                                                           data_mean_2d,
+                                                                                                                                           data_std_2d,
+                                                                                                                                           dim_to_ignore_2d,
+                                                                                                                                           dim_to_use_2d)
   print( "done reading, normalizing data and compute biframe structure." )
 
   # Avoid using the GPU if requested
@@ -181,7 +189,7 @@ def train():
     print("Creating %d bi-layers of %d units." % (FLAGS.num_layers, FLAGS.linear_size))
     model = create_model( sess, actions, FLAGS.batch_size )
     model.train_writer.add_graph( sess.graph )
-    print("Model created")
+    print("Model created\n")
 
     #=== This is the training loop ===
     step_time, loss, val_loss = 0.0, 0.0, 0.0
@@ -228,10 +236,10 @@ def train():
       print("=============================\n"
             "Global step:         %d\n"
             "Learning rate:       %.2e\n"
-            "Train loss avg:      %.4f\n"
+            "Train loss avg:      %.4f\n" #Average Loss Per batch
             "=============================" % (model.global_step.eval(),
             model.learning_rate.eval(), loss) )
-      print('Epoch number {0} completed in {1:.2f} ms'.format(current_epoch, (time.time() - epoch_time)))
+      print('Epoch number {0} completed in {1:.2f} s'.format(current_epoch, (time.time() - epoch_time)))
       # === End training for an epoch ===
 
       # === Testing after this epoch ===
@@ -422,20 +430,63 @@ def sample():
   # Load 3d data and load (or create) 2d projections
   train_set_3d, test_set_3d, data_mean_3d, data_std_3d, dim_to_ignore_3d, dim_to_use_3d, train_root_positions, test_root_positions = data_utils.read_3d_data(
     actions, FLAGS.data_dir, FLAGS.camera_frame, rcams, FLAGS.predict_14 )
+  train_set_3d = data_utils.remove_first_frame(train_set_3d)
+  test_set_3d = data_utils.remove_first_frame(test_set_3d)
+  train_root_positions = data_utils.remove_first_frame(train_root_positions)
+  test_root_positions = data_utils.remove_first_frame(test_root_positions)
 
+  # Read stacked hourglass 2D predictions if use_sh, otherwise use groundtruth 2D projections
   if FLAGS.use_sh:
     train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.read_2d_predictions(actions, FLAGS.data_dir)
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.transform_to_2d_biframe_prediction(train_set_2d,
+                                                                                                                                           test_set_2d,
+                                                                                                                                           data_mean_2d,
+                                                                                                                                           data_std_2d,
+                                                                                                                                           dim_to_ignore_2d,
+                                                                                                                                           dim_to_use_2d)
   else:
     train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.create_2d_data( actions, FLAGS.data_dir, rcams )
-  print( "done reading and normalizing data." )
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.transform_to_2d_biframe_prediction(train_set_2d,
+                                                                                                                                           test_set_2d,
+                                                                                                                                           data_mean_2d,
+                                                                                                                                           data_std_2d,
+                                                                                                                                           dim_to_ignore_2d,
+                                                                                                                                           dim_to_use_2d)
+  print( "done reading, normalizing data and compute biframe structure." )
 
   device_count = {"GPU": 0} if FLAGS.use_cpu else {"GPU": 1}
   with tf.Session(config=tf.ConfigProto( device_count = device_count )) as sess:
     # === Create the model ===
     print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.linear_size))
-    batch_size = 128
+    batch_size = 64 #Intial value was 128
     model = create_model(sess, actions, batch_size)
     print("Model loaded")
+
+    #####Evaluate test error action wise
+    print("{0:=^12} {1:=^6}".format("Action", "mm")) # line of 30 equal signs
+
+    cum_err = 0
+    for action in actions:
+
+      print("{0:<12} ".format(action), end="")
+      # Get 2d and 3d testing data for this action
+      action_test_set_2d = get_action_subset( test_set_2d, action )
+      action_test_set_3d = get_action_subset( test_set_3d, action )
+      encoder_inputs, decoder_outputs = model.get_all_batches( action_test_set_2d, action_test_set_3d, FLAGS.camera_frame, training=False)
+
+      act_err, _, step_time, loss = evaluate_batches( sess, model,
+        data_mean_3d, data_std_3d, dim_to_use_3d, dim_to_ignore_3d,
+        data_mean_2d, data_std_2d, dim_to_use_2d, dim_to_ignore_2d,
+        1, encoder_inputs, decoder_outputs ) #We don't care of the value 1. It is a false argument.
+      cum_err = cum_err + act_err
+
+      print("{0:>6.2f}".format(act_err))
+
+    print("{0:<12} {1:>6.2f}".format("Average", cum_err/float(len(actions) )))
+    print("{0:=^19}".format(''))
+    ############################
+
+
 
     for key2d in test_set_2d.keys():
 
@@ -504,6 +555,9 @@ def sample():
   enc_in, dec_out, poses3d = map( np.vstack, [enc_in, dec_out, poses3d] )
   idx = np.random.permutation( enc_in.shape[0] )
   enc_in, dec_out, poses3d = enc_in[idx, :], dec_out[idx, :], poses3d[idx, :]
+
+  #To ensure compatibility with image display structure, we drop the past frame
+  enc_in = enc_in[:, 64:]
 
   # Visualize random samples
   import matplotlib.gridspec as gridspec

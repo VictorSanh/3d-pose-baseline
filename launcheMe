@@ -1,0 +1,12 @@
+#!/bin/bash
+
+python3 src/predict_3dpose_biframe.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --linear_size 1024 --num_layers 2 --action Discussion
+python3 src/predict_3dpose_biframe.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --linear_size 1536 --num_layers 2 --action Discussion
+python3 src/predict_3dpose_biframe.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --linear_size 2048 --num_layers 2 --action Discussion
+
+python3 src/predict_3dpose_biframe.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --linear_size 1024 --num_layers 3 --action Discussion
+python3 src/predict_3dpose_biframe.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --linear_size 1536 --num_layers 3 --action Discussion
+python3 src/predict_3dpose_biframe.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --linear_size 2048 --num_layers 3 --action Discussion
+
+
+
