@@ -1,18 +1,6 @@
 #!/bin/bash
 
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1024 --num_layers 2
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1024 --num_layers 2 --procrustes True
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1536 --num_layers 2
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1536 --num_layers 2 --procrustes True
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 2048 --num_layers 2
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 2048 --num_layers 2 --procrustes True
-
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1024 --num_layers 3
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1024 --num_layers 3 --procrustes True
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1536 --num_layers 3
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 1536 --num_layers 3 --procrustes True
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 2048 --num_layers 3
-python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 200 --linear_size 2048 --num_layers 3 --procrustes True
-
-
-
+python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1024 --num_layers 2 --batch_size 512
+python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1024 --num_layers 2 --batch_size 512 -- procrustes True
+python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1536 --num_layers 2 --batch_size 512
+python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1536 --num_layers 2 --batch_size 512 --procrustes True

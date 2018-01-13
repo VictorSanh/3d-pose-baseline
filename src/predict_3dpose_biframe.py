@@ -494,7 +494,7 @@ def sample():
   with tf.Session(config=tf.ConfigProto( device_count = device_count )) as sess:
     # === Create the model ===
     print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.linear_size))
-    batch_size = 64 #Intial value was 128
+    batch_size = FLAGS.batch_size#64 #Intial value was 128
     model = create_model(sess, actions, batch_size)
     print("Model loaded")
 
