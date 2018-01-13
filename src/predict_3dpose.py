@@ -24,6 +24,41 @@ import cameras
 import data_utils
 import linear_model
 
+import argparse
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--learning_rate", type=float, default=1e-3)
+parser.add_argument("--dropout", type=float, default=1)
+parser.add_argument("--batch_size", type=int, default=64)
+parser.add_argument("--epochs", type=int, default=200)
+parser.add_argument("--camera_frame", type=bool, default=False)
+parser.add_argument("--max_norm", type=bool, default=False)
+parser.add_argument("--batch_norm", type=bool, default=False)
+
+parser.add_argument("--predict_14", type=bool, default=False)
+parser.add_argument("--use_sh", type=bool, default=False)
+parser.add_argument("--action", default="All")
+
+parser.add_argument("--linear_size", type=int, default=1024)
+parser.add_argument("--num_layers", type=int, default=2)
+parser.add_argument("--residual", type=bool, default=False)
+
+parser.add_argument("--procrustes", type=bool, default=False)
+parser.add_argument("--evaluateActionWise", type=bool, default=False)
+
+parser.add_argument("--cameras_path", default="data/h36m/cameras.h5")
+parser.add_argument("--data_dir", default="data/h36m/")
+parser.add_argument("--train_dir", default="experiments_biframe")
+
+parser.add_argument("--sample", type=bool, default=False)
+parser.add_argument("--use_cpu", type=bool, default=False)
+parser.add_argument("--load", type=int, default=0)
+
+parser.add_argument("--use_fp16", type=bool, default=False)
+
+FLAGS, _ = parser.parse_known_args()
+
+'''
 tf.app.flags.DEFINE_float("learning_rate", 1e-3, "Learning rate")
 tf.app.flags.DEFINE_float("dropout", 1, "Dropout keep probability. 1 means no dropout")
 tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size to use during training")
@@ -49,7 +84,7 @@ tf.app.flags.DEFINE_boolean("evaluateActionWise",False, "The dataset to use eith
 # Directories
 tf.app.flags.DEFINE_string("cameras_path","data/h36m/cameras.h5","Directory to load camera parameters")
 tf.app.flags.DEFINE_string("data_dir",   "data/h36m/", "Data directory")
-tf.app.flags.DEFINE_string("train_dir", "experiments", "Training directory.")
+tf.app.flags.DEFINE_string("train_dir", "experiments_biframe", "Training directory.")
 
 # Train or load
 tf.app.flags.DEFINE_boolean("sample", False, "Set to True for sampling.")
@@ -62,6 +97,7 @@ tf.app.flags.DEFINE_boolean("use_fp16", False, "Train using fp16 instead of fp32
 
 FLAGS = tf.app.flags.FLAGS
 FLAGS(sys.argv)
+'''
 
 train_dir = os.path.join(FLAGS.train_dir,
   FLAGS.action,

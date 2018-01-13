@@ -24,6 +24,7 @@ import cameras
 import data_utils
 import linear_model_biframe
 
+
 import argparse
 parser = argparse.ArgumentParser()
 
@@ -98,6 +99,8 @@ tf.app.flags.DEFINE_boolean("use_fp16", False, "Train using fp16 instead of fp32
 FLAGS = tf.app.flags.FLAGS
 FLAGS(sys.argv)
 '''
+
+
 
 train_dir = os.path.join(FLAGS.train_dir,
   FLAGS.action,
