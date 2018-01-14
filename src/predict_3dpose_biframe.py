@@ -51,6 +51,7 @@ parser.add_argument("--data_dir", default="data/h36m/")
 parser.add_argument("--train_dir", default="experiments_biframe")
 
 parser.add_argument("--sample", type=bool, default=False)
+parser.add_argument("--sample_specific", type=bool, default=False)
 parser.add_argument("--use_cpu", type=bool, default=False)
 parser.add_argument("--load", type=int, default=0)
 
@@ -630,8 +631,186 @@ def sample():
 
   plt.show()
 
+def action_sample(specific_action, specific_subject, specific_fname, specific_frames):
+  """Get seleted samples from a model and action and sequence and visualize them"""
+
+  actions = data_utils.define_actions( FLAGS.action )
+
+  # Load camera parameters
+  SUBJECT_IDS = [1,5,6,7,8,9,11]
+  rcams = cameras.load_cameras(FLAGS.cameras_path, SUBJECT_IDS)
+
+  # Load 3d data and load (or create) 2d projections
+  train_set_3d, test_set_3d, data_mean_3d, data_std_3d, dim_to_ignore_3d, dim_to_use_3d, train_root_positions, test_root_positions = data_utils.read_3d_data(
+    actions, FLAGS.data_dir, FLAGS.camera_frame, rcams, FLAGS.predict_14 )
+  train_set_3d = data_utils.remove_first_frame(train_set_3d)
+  test_set_3d = data_utils.remove_first_frame(test_set_3d)
+  train_root_positions = data_utils.remove_first_frame(train_root_positions)
+  test_root_positions = data_utils.remove_first_frame(test_root_positions)
+
+  # Read stacked hourglass 2D predictions if use_sh, otherwise use groundtruth 2D projections
+  if FLAGS.use_sh:
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.read_2d_predictions(actions, FLAGS.data_dir)
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.transform_to_2d_biframe_prediction(train_set_2d,
+                                                                                                                                           test_set_2d,
+                                                                                                                                           data_mean_2d,
+                                                                                                                                           data_std_2d,
+                                                                                                                                           dim_to_ignore_2d,
+                                                                                                                                           dim_to_use_2d)
+  else:
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.create_2d_data( actions, FLAGS.data_dir, rcams )
+    train_set_2d, test_set_2d, data_mean_2d, data_std_2d, dim_to_ignore_2d, dim_to_use_2d = data_utils.transform_to_2d_biframe_prediction(train_set_2d,
+                                                                                                                                           test_set_2d,
+                                                                                                                                           data_mean_2d,
+                                                                                                                                           data_std_2d,
+                                                                                                                                           dim_to_ignore_2d,
+                                                                                                                                           dim_to_use_2d)
+  print( "done reading, normalizing data and compute biframe structure." )
+
+  device_count = {"GPU": 0} if FLAGS.use_cpu else {"GPU": 1}
+  with tf.Session(config=tf.ConfigProto( device_count = device_count )) as sess:
+    # === Create the model ===
+    print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.linear_size))
+    batch_size = FLAGS.batch_size#64 #Intial value was 128
+    model = create_model(sess, actions, batch_size)
+    print("Model loaded")
+
+
+
+    for key2d in test_set_2d.keys():
+
+      (subj, b, fname) = key2d
+      if b != specific_action:
+          continue
+      if subj != specific_subject:
+          continue
+      if fname != specific_fname:
+          continue
+      print( "Subject: {}, action: {}, fname: {}".format(subj, b, fname) )
+
+      # keys should be the same if 3d is in camera coordinates
+      key3d = key2d if FLAGS.camera_frame else (subj, b, '{0}.h5'.format(fname.split('.')[0]))
+      key3d = (subj, b, fname[:-3]) if (fname.endswith('-sh')) and FLAGS.camera_frame else key3d
+
+      enc_in  = test_set_2d[ key2d ]
+      n2d, _ = enc_in.shape
+      dec_out = test_set_3d[ key3d ]
+      n3d, _ = dec_out.shape
+      assert n2d == n3d
+
+      # Split into about-same-size batches
+      enc_in   = np.array_split( enc_in,  n2d // batch_size )
+      dec_out  = np.array_split( dec_out, n3d // batch_size )
+      all_poses_3d = []
+
+      for bidx in range( len(enc_in) ):
+
+        # Dropout probability 0 (keep probability 1) for sampling
+        dp = 1.0
+        #_, _, poses3d = model.step(sess, enc_in[bidx], dec_out[bidx], dp, isTraining=False)
+        couldBeAnything = np.zeros(dec_out[bidx].shape)
+        _, _, poses3d = model.step(sess, enc_in[bidx], couldBeAnything, dp, isTraining=False) #Predictions
+
+        # denormalize
+        enc_in[bidx]  = data_utils.unNormalizeData(  enc_in[bidx], data_mean_2d, data_std_2d, dim_to_ignore_2d )
+        dec_out[bidx] = data_utils.unNormalizeData( dec_out[bidx], data_mean_3d, data_std_3d, dim_to_ignore_3d )
+        poses3d = data_utils.unNormalizeData( poses3d, data_mean_3d, data_std_3d, dim_to_ignore_3d )
+        all_poses_3d.append( poses3d )
+
+      # Put all the poses together
+      enc_in, dec_out, poses3d = map( np.vstack, [enc_in, dec_out, all_poses_3d] )
+
+      # Convert back to world coordinates
+      if FLAGS.camera_frame:
+        N_CAMERAS = 4
+        N_JOINTS_H36M = 32
+
+        # Add global position back
+        dec_out = dec_out + np.tile( test_root_positions[ key3d ], [1,N_JOINTS_H36M] )
+
+        # Load the appropriate camera
+        subj, _, sname = key3d
+
+        cname = sname.split('.')[1] # <-- camera name
+        scams = {(subj,c+1): rcams[(subj,c+1)] for c in range(N_CAMERAS)} # cams of this subject
+        scam_idx = [scams[(subj,c+1)][-1] for c in range(N_CAMERAS)].index( cname ) # index of camera used
+        the_cam  = scams[(subj, scam_idx+1)] # <-- the camera used
+        R, T, f, c, k, p, name = the_cam
+        assert name == cname
+
+        def cam2world_centered(data_3d_camframe):
+          data_3d_worldframe = cameras.camera_to_world_frame(data_3d_camframe.reshape((-1, 3)), R, T)
+          data_3d_worldframe = data_3d_worldframe.reshape((-1, N_JOINTS_H36M*3))
+          # subtract root translation
+          return data_3d_worldframe - np.tile( data_3d_worldframe[:,:3], (1,N_JOINTS_H36M) )
+
+        # Apply inverse rotation and translation
+        dec_out = cam2world_centered(dec_out)
+        poses3d = cam2world_centered(poses3d)
+
+  # Grab frames to visualize
+  enc_in, dec_out, poses3d = map( np.vstack, [enc_in, dec_out, poses3d] )
+  #idx = np.random.permutation( enc_in.shape[0] )
+  idx = np.array(specific_frames)
+  enc_in, dec_out, poses3d = enc_in[idx, :], dec_out[idx, :], poses3d[idx, :]
+
+  #To ensure compatibility with image display structure, we drop the past frame
+  enc_in = enc_in[:, 64:]
+
+  # Visualize random samples
+  import matplotlib.gridspec as gridspec
+
+  # 1080p	= 1,920 x 1,080
+  fig = plt.figure( figsize=(19.2, 10.8) )
+
+  gs1 = gridspec.GridSpec(5, 9) # 5 rows, 9 columns
+  gs1.update(wspace=-0.00, hspace=0.05) # set the spacing between axes.
+  plt.axis('off')
+
+  subplot_idx, exidx = 1, 0
+  nsamples = 15
+  for i in np.arange( nsamples ):
+
+    # Plot 2d pose
+    ax1 = plt.subplot(gs1[subplot_idx-1])
+    p2d = enc_in[exidx,:]
+    viz.show2Dpose( p2d, ax1 )
+    ax1.invert_yaxis()
+
+    # Plot 3d gt
+    ax2 = plt.subplot(gs1[subplot_idx], projection='3d')
+    p3d = dec_out[exidx,:]
+    viz.show3Dpose( p3d, ax2 )
+
+    # Plot 3d predictions
+    ax3 = plt.subplot(gs1[subplot_idx+1], projection='3d')
+    p3d = poses3d[exidx,:]
+    viz.show3Dpose( p3d, ax3, lcolor="#9b59b6", rcolor="#2ecc71" )
+
+    exidx = exidx + 1
+    subplot_idx = subplot_idx + 3
+
+  plt.show()
+
+#Easy: Walking, 11, 'Walking.58860488.h5', Size: 1620
+#Middle: Discussion, 11, 'Discussion 2.58860488.h5', Size: 2197
+specific_action_to_sample = "Walking"
+specific_subject = 11
+
+if specific_action_to_sample == "Photo":#Hard
+  specific_fname = 'Photo.58860488.h5'
+  specific_frames = [50, 83, 185, 189, 221, 269, 287, 304, 591, 619, 866, 1054, 1128, 1837, 1962]
+elif specific_action_to_sample == "Discussion":#Middle
+  specific_fname = 'Discussion 2.58860488.h5'
+  specific_frames = [5, 163, 251, 506, 575, 615, 644, 766, 875, 1129, 1208, 1716, 1845, 1973, 2087]
+elif specific_action_to_sample == "Walking":#Easy
+  specific_fname = 'Walking.58860488.h5'
+  specific_frames = [215, 253, 279, 338, 350, 419, 504, 655, 747, 841, 912, 955, 1150, 1340, 1531]
+
 def main(_):
-  if FLAGS.sample:
+  if FLAGS.sample_specific and not FLAGS.sample:
+      action_sample(specific_action_to_sample, specific_subject, specific_fname, specific_frames)
+  elif FLAGS.sample and not FLAGS.sample_specific:
     sample()
   else:
     train()
