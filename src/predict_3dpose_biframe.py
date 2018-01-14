@@ -631,7 +631,7 @@ def sample():
 
   plt.show()
 
-def action_sample(specific_action, specific_subject, specific_fname, specific_frames):
+def specific_sample(specific_action, specific_subject, specific_fname, specific_frames):
   """Get seleted samples from a model and action and sequence and visualize them"""
 
   actions = data_utils.define_actions( FLAGS.action )
@@ -792,8 +792,10 @@ def action_sample(specific_action, specific_subject, specific_fname, specific_fr
 
   plt.show()
 
-#Easy: Walking, 11, 'Walking.58860488.h5', Size: 1620
-#Middle: Discussion, 11, 'Discussion 2.58860488.h5', Size: 2197
+
+
+
+
 specific_action_to_sample = "Walking"
 specific_subject = 11
 
@@ -807,9 +809,12 @@ elif specific_action_to_sample == "Walking":#Easy
   specific_fname = 'Walking.58860488.h5'
   specific_frames = [215, 253, 279, 338, 350, 419, 504, 655, 747, 841, 912, 955, 1150, 1340, 1531]
 
+if FLAGS.use_sh:
+  specific_fname += '-sh'
+
 def main(_):
   if FLAGS.sample_specific and not FLAGS.sample:
-      action_sample(specific_action_to_sample, specific_subject, specific_fname, specific_frames)
+      specific_sample(specific_action_to_sample, specific_subject, specific_fname, specific_frames)
   elif FLAGS.sample and not FLAGS.sample_specific:
     sample()
   else:
