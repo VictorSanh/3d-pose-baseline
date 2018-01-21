@@ -55,16 +55,17 @@ def show3Dpose(channels, ax, lcolor="#3498db", rcolor="#e74c3c", add_labels=Fals
   ax.set_zticklabels([])
   ax.set_aspect('equal')
 
-  # Get rid of the panes (actually, make them white)
-  white = (1.0, 1.0, 1.0, 0.0)
-  ax.w_xaxis.set_pane_color(white)
-  ax.w_yaxis.set_pane_color(white)
-  # Keep z pane
+  if add_labels==False:
+    # Get rid of the panes (actually, make them white)
+    white = (1.0, 1.0, 1.0, 0.0)
+    ax.w_xaxis.set_pane_color(white)
+    ax.w_yaxis.set_pane_color(white)
+    # Keep z pane
 
-  # Get rid of the lines in 3d
-  ax.w_xaxis.line.set_color(white)
-  ax.w_yaxis.line.set_color(white)
-  ax.w_zaxis.line.set_color(white)
+    # Get rid of the lines in 3d
+    ax.w_xaxis.line.set_color(white)
+    ax.w_yaxis.line.set_color(white)
+    ax.w_zaxis.line.set_color(white)
 
 def show2Dpose(channels, ax, lcolor="#3498db", rcolor="#e74c3c", add_labels=False):
   """

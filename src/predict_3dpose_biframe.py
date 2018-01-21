@@ -14,6 +14,7 @@ import h5py
 import copy
 
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
@@ -59,46 +60,6 @@ parser.add_argument("--use_fp16", type=bool, default=False)
 
 FLAGS, _ = parser.parse_known_args()
 
-'''
-tf.app.flags.DEFINE_float("learning_rate", 1e-3, "Learning rate")
-tf.app.flags.DEFINE_float("dropout", 1, "Dropout keep probability. 1 means no dropout")
-tf.app.flags.DEFINE_integer("batch_size", 64, "Batch size to use during training")
-tf.app.flags.DEFINE_integer("epochs", 200, "How many epochs we should train for")
-tf.app.flags.DEFINE_boolean("camera_frame", False, "Convert 3d poses to camera coordinates")
-tf.app.flags.DEFINE_boolean("max_norm", False, "Apply maxnorm constraint to the weights")
-tf.app.flags.DEFINE_boolean("batch_norm", False, "Use batch_normalization")
-
-# Data loading
-tf.app.flags.DEFINE_boolean("predict_14", False, "predict 14 joints")
-tf.app.flags.DEFINE_boolean("use_sh", False, "Use 2d pose predictions from StackedHourglass")
-tf.app.flags.DEFINE_string("action","All", "The action to train on. 'All' means all the actions")
-
-# Architecture
-tf.app.flags.DEFINE_integer("linear_size", 1024, "Size of each model layer.")
-tf.app.flags.DEFINE_integer("num_layers", 2, "Number of layers in the model.")
-tf.app.flags.DEFINE_boolean("residual", False, "Whether to add a residual connection every 2 layers")
-
-# Evaluation
-tf.app.flags.DEFINE_boolean("procrustes", False, "Apply procrustes analysis at test time")
-tf.app.flags.DEFINE_boolean("evaluateActionWise",False, "The dataset to use either h36m or heva")
-
-# Directories
-tf.app.flags.DEFINE_string("cameras_path","data/h36m/cameras.h5","Directory to load camera parameters")
-tf.app.flags.DEFINE_string("data_dir",   "data/h36m/", "Data directory")
-tf.app.flags.DEFINE_string("train_dir", "experiments_biframe", "Training directory.")
-
-# Train or load
-tf.app.flags.DEFINE_boolean("sample", False, "Set to True for sampling.")
-tf.app.flags.DEFINE_boolean("use_cpu", False, "Whether to use the CPU")
-tf.app.flags.DEFINE_integer("load", 0, "Try to load a previous checkpoint.")
-
-# Misc
-#Float Precision
-tf.app.flags.DEFINE_boolean("use_fp16", False, "Train using fp16 instead of fp32.")
-
-FLAGS = tf.app.flags.FLAGS
-FLAGS(sys.argv)
-'''
 
 train_dir = os.path.join(FLAGS.train_dir,
   FLAGS.action,
@@ -490,7 +451,7 @@ def sample():
                                                                                                                                            dim_to_ignore_2d,
                                                                                                                                            dim_to_use_2d)
   print( "done reading, normalizing data and compute biframe structure." )
-
+  print(data_std_2d)
   device_count = {"GPU": 0} if FLAGS.use_cpu else {"GPU": 1}
   with tf.Session(config=tf.ConfigProto( device_count = device_count )) as sess:
     # === Create the model ===
@@ -761,34 +722,42 @@ def specific_sample(specific_action, specific_subject, specific_fname, specific_
   import matplotlib.gridspec as gridspec
 
   # 1080p	= 1,920 x 1,080
-  fig = plt.figure( figsize=(19.2, 10.8) )
+  fig = plt.figure( figsize=(22, 12) )
 
-  gs1 = gridspec.GridSpec(5, 9) # 5 rows, 9 columns
+  gs1 = gridspec.GridSpec(5, 9) # 5 rows, 12 columns
   gs1.update(wspace=-0.00, hspace=0.05) # set the spacing between axes.
   plt.axis('off')
 
-  subplot_idx, exidx = 1, 0
+  subplot_idx, exidx, im_count = 0, 0, 1
   nsamples = 15
   for i in np.arange( nsamples ):
 
+    ax0 = plt.subplot(gs1[subplot_idx])
+    img = mpimg.imread("imgs/{}/{}.jpg".format(specific_action, im_count))
+    ax0.imshow(img)
+    subplot_idx = subplot_idx + 1
+    im_count = im_count + 1
+
     # Plot 2d pose
-    ax1 = plt.subplot(gs1[subplot_idx-1])
-    p2d = enc_in[exidx,:]
-    viz.show2Dpose( p2d, ax1 )
-    ax1.invert_yaxis()
+    #ax1 = plt.subplot(gs1[subplot_idx])
+    #p2d = enc_in[exidx,:]
+    #viz.show2Dpose( p2d, ax1 )
+    #ax1.invert_yaxis()
+    #subplot_idx = subplot_idx + 1
 
     # Plot 3d gt
     ax2 = plt.subplot(gs1[subplot_idx], projection='3d')
     p3d = dec_out[exidx,:]
     viz.show3Dpose( p3d, ax2 )
+    subplot_idx = subplot_idx + 1
 
     # Plot 3d predictions
-    ax3 = plt.subplot(gs1[subplot_idx+1], projection='3d')
+    ax3 = plt.subplot(gs1[subplot_idx], projection='3d')
     p3d = poses3d[exidx,:]
     viz.show3Dpose( p3d, ax3, lcolor="#9b59b6", rcolor="#2ecc71" )
+    subplot_idx = subplot_idx + 1
 
     exidx = exidx + 1
-    subplot_idx = subplot_idx + 3
 
   plt.show()
 
@@ -796,18 +765,26 @@ def specific_sample(specific_action, specific_subject, specific_fname, specific_
 
 
 
-specific_action_to_sample = "Walking"
-specific_subject = 11
+specific_action_to_sample = "SittingDown"
+specific_subject = 9
+# 54138969 55011271 58860488 60457274
 
 if specific_action_to_sample == "Photo":#Hard
   specific_fname = 'Photo.58860488.h5'
-  specific_frames = [50, 83, 185, 189, 221, 269, 287, 304, 591, 619, 866, 1054, 1128, 1837, 1962]
+  specific_frames = [51, 84, 186, 190, 222, 270, 288, 305, 592, 620, 867, 1055, 1129, 1241, 1481]
 elif specific_action_to_sample == "Discussion":#Middle
-  specific_fname = 'Discussion 2.58860488.h5'
-  specific_frames = [5, 163, 251, 506, 575, 615, 644, 766, 875, 1129, 1208, 1716, 1845, 1973, 2087]
+  specific_fname = 'Discussion 2.55011271.h5'
+  specific_frames = [6, 164, 252, 507, 576, 616, 645, 767, 876, 1130, 1209, 1717, 1846, 1974, 2088]
 elif specific_action_to_sample == "Walking":#Easy
   specific_fname = 'Walking.58860488.h5'
-  specific_frames = [215, 253, 279, 338, 350, 419, 504, 655, 747, 841, 912, 955, 1150, 1340, 1531]
+  specific_frames = [216, 254, 280, 339, 351, 420, 505, 656, 748, 842, 913, 956, 1151, 1341, 1532]
+elif specific_action_to_sample == "SittingDown":
+  specific_fname = 'SittingDown.55011271.h5'
+  specific_frames = [341, 496, 571, 691, 796, 911, 1026, 1141, 1256, 1371, 1486, 1621, 1736, 1781, 1831]
+elif specific_action_to_sample == "WalkDog":
+  specific_fname = 'WalkDog.58860488.h5'
+  specific_frames = [49, 96, 161, 231, 286, 326, 411, 531, 571, 666, 781, 836, 901, 941, 1056]
+
 
 if FLAGS.use_sh:
   specific_fname += '-sh'

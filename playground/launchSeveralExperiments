@@ -4,3 +4,11 @@ python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batc
 python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1024 --num_layers 2 --batch_size 512 -- procrustes True
 python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1536 --num_layers 2 --batch_size 512
 python3 src/predict_3dpose_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --evaluateActionWise True --epochs 225 --linear_size 1536 --num_layers 2 --batch_size 512 --procrustes True
+
+
+MANIPUlATION VIDEO
+UNIFRAME
+python3 src/manipulation.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --procrustes True --load 4874200
+
+BIFRAME
+python3 src/manipulation_biframe.py --camera_frame True --residual True --batch_norm True --dropout 0.5 --max_norm True --procrustes True --epochs 225 --linear_size 1536 --batch_size 512 --load 685125

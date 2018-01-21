@@ -1,83 +1,25 @@
 ## 3d-pose-baseline
 
-This is the code for the paper
+This is the code for the project Human Pose Estimation - Extention to videos.
+This project was realized in the context of the course 'Object Recognition and Computer Vision' taught in Master MVA by I. Laptev, J. Sivic, C. Schmid and J. Ponce.
+
+
+This code is based on the code developped by Martinez and al. and published along with the paper
 
 Julieta Martinez, Rayat Hossain, Javier Romero, James J. Little.
 _A simple yet effective baseline for 3d human pose estimation._
 In ICCV, 2017. https://arxiv.org/pdf/1705.03098.pdf.
 
-The code in this repository was mostly written by
-[Julieta Martinez](https://github.com/una-dinosauria),
-[Rayat Hossain](https://github.com/rayat137) and
-[Javier Romero](https://github.com/libicocco).
+Initial code can be found here: https://github.com/una-dinosauria/3d-pose-baseline
 
-We provide a strong baseline for 3d human pose estimation that also sheds light
-on the challenges of current approaches. Our model is lightweight and we strive
-to make our code transparent, compact, and easy-to-understand.
 
-### Dependencies
+### Abstract
 
-* [h5py](http://www.h5py.org/)
-* [tensorflow](https://www.tensorflow.org/) 1.0 or later
+Martinez and al. introduced a surprisingly simple linear model to perform 3D human pose estimation from 2D pose estimates that compete with the best methods available in the literature. Building on the work of Martinez, I designed a simple model that try to extend the previous work to videos by taking into account the temporal continuity between consecutive frames. The model was trained and extensively tested on the Human3.6M dataset. Results show that this new model slightly improve the performance, but more importantly, it successfully capture the temporal continuity between frames as consecutive 3D predictions are
+significantly smoother. The manipulation video dataset was also used to perform quantitative comparison.
 
-### First of all
-1. Watch our video: https://youtu.be/Hmi3Pd9x1BE
-2. Clone this repository and get the data. We provide the [Human3.6M](http://vision.imar.ro/human3.6m/description.php) dataset in 3d points, camera parameters to produce ground truth 2d detections, and [Stacked Hourglass](https://github.com/anewell/pose-hg-demo) detections.
 
-```bash
-git clone https://github.com/una-dinosauria/3d-pose-baseline.git
-cd 3d-pose-baseline
-mkdir data
-cd data
-wget https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip
-unzip h36m.zip
-rm h36m.zip
-cd ..
-```
-
-### Quick demo
-
-For a quick demo, you can train for one epoch and visualize the results. To train, run
-
-`python src/predict_3dpose.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 1`
-
-This should take about <5 minutes to complete on a GTX 1080, and give you around 75 mm of error on the test set.
-
-Now, to visualize the results, simply run
-
-`python src/predict_3dpose.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 1 --sample --load 24371`
-
-This will produce a visualization similar to this:
-
-![Visualization example](/imgs/viz_example.png?raw=1)
-
-### Training
-
-To train a model with clean 2d detections, run:
-
-<!-- `python src/predict_3dpose.py --camera_frame --residual` -->
-`python src/predict_3dpose.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise`
-
-This corresponds to Table 2, bottom row. `Ours (GT detections) (MA)`
-
-To train on Stacked Hourglass detections, run
-
-`python src/predict_3dpose.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh`
-
-This corresponds to Table 2, next-to-last row. `Ours (SH detections) (MA)`
-
-On a GTX 1080 GPU, this takes <8 ms for forward+backward computation, and
-<6 ms for forward-only computation per batch of 64.
-
-### Pre-trained model
-
-We also provide a model pre-trained on Stacked-Hourglass detections, available through [google drive](https://drive.google.com/file/d/0BxWzojlLp259MF9qSFpiVjl0cU0/view?usp=sharing)
-
-To test the model, decompress the file at the top level of this project, and call
-
-`python src/predict_3dpose.py --camera_frame --residual --batch_norm --dropout 0.5 --max_norm --evaluateActionWise --use_sh --epochs 200 --sample --load 4874200`
-
-### Citing
+### Citing of initial authors
 
 If you use our code, please cite our work
 
