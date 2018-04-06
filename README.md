@@ -8,9 +8,10 @@ This code is based on the code developped by Martinez and al. and published alon
 
 Julieta Martinez, Rayat Hossain, Javier Romero, James J. Little.
 _A simple yet effective baseline for 3d human pose estimation._
-In ICCV, 2017. https://arxiv.org/pdf/1705.03098.pdf.
+In ICCV, 2017. 
+[Link to the paper](https://arxiv.org/pdf/1705.03098.pdf)
 
-Initial code can be found here: https://github.com/una-dinosauria/3d-pose-baseline
+Initial code can be found [here](https://github.com/una-dinosauria/3d-pose-baseline)
 
 
 ### Abstract
@@ -18,10 +19,9 @@ Initial code can be found here: https://github.com/una-dinosauria/3d-pose-baseli
 Martinez and al. introduced a surprisingly simple linear model to perform 3D human pose estimation from 2D pose estimates that compete with the best methods available in the literature. Building on the work of Martinez, I designed a simple model that try to extend the previous work to videos by taking into account the temporal continuity between consecutive frames. The model was trained and extensively tested on the Human3.6M dataset. Results show that this new model slightly improve the performance, but more importantly, it successfully capture the temporal continuity between frames as consecutive 3D predictions are
 significantly smoother. The manipulation video dataset was also used to perform quantitative comparison.
 
+Please refer to the [Experiment Report](https://github.com/VictorSanh/3d-pose-baseline/blob/master/Experiments%20Report.pdf) for the whole study.
 
 ### Citing of initial authors
-
-If you use our code, please cite our work
 
 ```
 @inproceedings{martinez_2017_3dbaseline,
@@ -31,6 +31,3 @@ If you use our code, please cite our work
   year={2017}
 }
 ```
-
-### License
-MIT
